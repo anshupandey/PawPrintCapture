@@ -16,7 +16,7 @@ import { Download, Play, FileText, Video, FileImage } from "lucide-react";
 export default function Upload() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
-  const [showCompletedJob, setShowCompletedJob] = useState<string | null>("dbbf7d54-c4ce-4147-a101-d72759741c2c");
+  const [showCompletedJob, setShowCompletedJob] = useState<string | null>(null);
   const { toast } = useToast();
 
   const form = useForm<UploadRequest>({

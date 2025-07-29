@@ -51,57 +51,145 @@ class FileManager:
             raise Exception(f"Failed to convert to PDF: {str(e)}")
     
     def embed_audio_in_slides(self, original_pptx: str, audio_files: List[Dict[str, Any]]) -> str:
-        """Embed audio files into PowerPoint slides"""
+        """Embed audio files into PowerPoint slides with auto-play functionality"""
         
         output_path = self.work_dir / "narrated_presentation.pptx"
         
         try:
-            from pptx import Presentation
-            from pptx.util import Inches
+            import zipfile
+            import shutil
+            from xml.etree import ElementTree as ET
+            from pathlib import Path
+            import uuid
             
-            # Load the original presentation
-            prs = Presentation(original_pptx)
+            # Copy original file to output path
+            shutil.copy2(original_pptx, output_path)
             
             # Create audio mapping
             audio_map = {af['slide_number']: af['audio_file'] for af in audio_files}
             
-            for slide_idx, slide in enumerate(prs.slides):
-                slide_number = slide_idx + 1
-                
-                if slide_number in audio_map:
-                    audio_file = audio_map[slide_number]
-                    
-                    if os.path.exists(audio_file):
-                        # Add audio to slide
-                        # Note: python-pptx has limited support for embedded audio
-                        # This is a simplified implementation
-                        try:
-                            # Add a small speaker icon/shape to indicate audio
-                            left = Inches(0.1)
-                            top = Inches(0.1)
-                            width = Inches(0.3)
-                            height = Inches(0.3)
-                            
-                            # Add a text box with audio indicator
-                            textbox = slide.shapes.add_textbox(left, top, width, height)
-                            text_frame = textbox.text_frame
-                            text_frame.text = "🔊"
-                            
-                            # In a full implementation, you would embed the actual audio file
-                            # This requires more complex manipulation of the PPTX file structure
-                            
-                        except Exception as e:
-                            print(f"Warning: Could not add audio indicator to slide {slide_number}: {e}")
+            # Work with PPTX as a ZIP file
+            temp_extract = self.work_dir / "pptx_temp"
+            if temp_extract.exists():
+                shutil.rmtree(temp_extract)
+            temp_extract.mkdir()
             
-            # Save the modified presentation
-            prs.save(str(output_path))
+            # Extract PPTX contents
+            with zipfile.ZipFile(output_path, 'r') as zip_ref:
+                zip_ref.extractall(temp_extract)
+            
+            # Process each slide that has audio
+            for slide_number, audio_file in audio_map.items():
+                if os.path.exists(audio_file):
+                    self._embed_audio_in_slide(temp_extract, slide_number, audio_file)
+            
+            # Repackage the PPTX
+            with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zip_ref:
+                for file_path in temp_extract.rglob('*'):
+                    if file_path.is_file():
+                        arc_name = file_path.relative_to(temp_extract)
+                        zip_ref.write(file_path, arc_name)
+            
+            # Cleanup temp directory
+            shutil.rmtree(temp_extract)
             
             return str(output_path)
             
-        except ImportError:
-            raise Exception("python-pptx not installed. Install with: pip install python-pptx")
         except Exception as e:
             raise Exception(f"Failed to embed audio in slides: {str(e)}")
+    
+    def _embed_audio_in_slide(self, pptx_dir: Path, slide_number: int, audio_file: str):
+        """Embed audio file directly into a specific slide with auto-play"""
+        
+        try:
+            slide_path = pptx_dir / "ppt" / "slides" / f"slide{slide_number}.xml"
+            if not slide_path.exists():
+                print(f"Warning: Slide {slide_number} not found")
+                return
+            
+            # Copy audio file to PPTX media folder
+            media_dir = pptx_dir / "ppt" / "media"
+            media_dir.mkdir(exist_ok=True)
+            
+            audio_ext = Path(audio_file).suffix
+            audio_filename = f"audio{slide_number}{audio_ext}"
+            audio_dest = media_dir / audio_filename
+            shutil.copy2(audio_file, audio_dest)
+            
+            # Parse slide XML
+            tree = ET.parse(slide_path)
+            root = tree.getroot()
+            
+            # Define namespaces
+            namespaces = {
+                'p': 'http://schemas.openxmlformats.org/presentationml/2006/main',
+                'a': 'http://schemas.openxmlformats.org/drawingml/2006/main',
+                'r': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
+            }
+            
+            # Find or create cSld element
+            cSld = root.find('.//p:cSld', namespaces)
+            if cSld is None:
+                return
+            
+            spTree = cSld.find('.//p:spTree', namespaces)
+            if spTree is None:
+                return
+            
+            # Create audio shape with auto-play
+            audio_shape = ET.SubElement(spTree, '{http://schemas.openxmlformats.org/presentationml/2006/main}sp')
+            
+            # Add nvSpPr (non-visual shape properties)
+            nvSpPr = ET.SubElement(audio_shape, '{http://schemas.openxmlformats.org/presentationml/2006/main}nvSpPr')
+            cNvPr = ET.SubElement(nvSpPr, '{http://schemas.openxmlformats.org/presentationml/2006/main}cNvPr')
+            cNvPr.set('id', str(1000 + slide_number))
+            cNvPr.set('name', f'Audio {slide_number}')
+            
+            # Add media reference with auto-play
+            audioFile = ET.SubElement(cNvPr, '{http://schemas.openxmlformats.org/drawingml/2006/main}audioFile')
+            audioFile.set('{http://schemas.openxmlformats.org/officeDocument/2006/relationships}link', f'rId{slide_number + 100}')
+            
+            # Add auto-play attributes
+            audioFile.set('autoPlay', '1')
+            audioFile.set('hideInSlideShow', '1')
+            
+            # Update slide relationships
+            self._update_slide_relationships(pptx_dir, slide_number, audio_filename)
+            
+            # Save modified slide
+            tree.write(slide_path, encoding='utf-8', xml_declaration=True)
+            
+        except Exception as e:
+            print(f"Warning: Could not embed audio in slide {slide_number}: {e}")
+    
+    def _update_slide_relationships(self, pptx_dir: Path, slide_number: int, audio_filename: str):
+        """Update slide relationships to include audio file"""
+        
+        try:
+            rels_dir = pptx_dir / "ppt" / "slides" / "_rels"
+            rels_dir.mkdir(exist_ok=True)
+            
+            rels_file = rels_dir / f"slide{slide_number}.xml.rels"
+            
+            # Create or update relationships file
+            if rels_file.exists():
+                tree = ET.parse(rels_file)
+                root = tree.getroot()
+            else:
+                root = ET.Element('{http://schemas.openxmlformats.org/package/2006/relationships}Relationships')
+                tree = ET.ElementTree(root)
+            
+            # Add audio relationship
+            relationship = ET.SubElement(root, '{http://schemas.openxmlformats.org/package/2006/relationships}Relationship')
+            relationship.set('Id', f'rId{slide_number + 100}')
+            relationship.set('Type', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/audio')
+            relationship.set('Target', f'../media/{audio_filename}')
+            
+            # Save relationships file
+            tree.write(rels_file, encoding='utf-8', xml_declaration=True)
+            
+        except Exception as e:
+            print(f"Warning: Could not update slide relationships for slide {slide_number}: {e}")
     
     def create_scorm_package(self, output_files: Dict[str, str]) -> str:
         """Create a SCORM package with all outputs (optional feature)"""
