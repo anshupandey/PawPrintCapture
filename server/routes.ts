@@ -59,7 +59,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Start Python processing script
-      const pythonScript = path.join(__dirname, 'services', 'powerpoint_processor.py');
+      const pythonScript = path.join(process.cwd(), 'server', 'services', 'powerpoint_processor.py');
       const pythonProcess = spawn('python3', [
         pythonScript,
         req.file.path,
