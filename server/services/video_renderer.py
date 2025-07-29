@@ -63,6 +63,7 @@ class VideoRenderer:
         try:
             from pptx.shapes.base import BaseShape
             from pptx.enum.shapes import MSO_SHAPE_TYPE
+            from PIL import ImageFont
             
             # Get shape position and size
             left = int((shape.left * scale) + offset_x) if hasattr(shape, 'left') else 0
