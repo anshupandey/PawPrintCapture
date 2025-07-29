@@ -1,0 +1,87 @@
+[
+  {
+    "slide_number": 1,
+    "transcript": "Hello everyone! Today, we're exploring the exciting realm of Cloud and Edge Computing. This innovative field combines cutting-edge technology with creative solutions. We'll discover how these concepts interact and why they play a crucial role in our digital age. Let's dive in!",
+    "duration_estimate": 27.599999999999998
+  },
+  {
+    "slide_number": 2,
+    "transcript": "Welcome to our course overview! Today, we\u2019re embarking on an engaging half-day workshop. We\u2019ll explore the world of cloud and edge computing in smart factories, with a focus on real-time processing and secure architectures. Discover how these technologies enhance agility, enable predictive maintenance, and support informed decision-making. Let\u2019s dive in!",
+    "duration_estimate": 28.2
+  },
+  {
+    "slide_number": 3,
+    "transcript": "Hello, everyone! Today, we're going to explore our agenda together. We'll highlight the essential topics that will guide our discussion. Let's ensure we're all aligned and ready to delve into what's next. Are you all set? Let's begin!",
+    "duration_estimate": 24.599999999999998
+  },
+  {
+    "slide_number": 4,
+    "transcript": "Hello everyone, and welcome to our introduction to cloud computing. Today, we'll uncover the essentials of cloud computing, explore its deployment and service models, and discover its applications in manufacturing. Plus, we'll dive into an exciting case study. Let's begin our journey!",
+    "duration_estimate": 25.2
+  },
+  {
+    "slide_number": 5,
+    "transcript": "Welcome to our exploration of cloud computing! You might be asking, \"What exactly is cloud computing?\" Simply put, it's a way to access powerful computing resources without needing a lot of hardware on-site. As you can see, traditional setups often require significant resources, but cloud computing offers a streamlined solution. Let's dive in and discover how it works!",
+    "duration_estimate": 30.599999999999998
+  },
+  {
+    "slide_number": 6,
+    "transcript": "Let's explore cloud computing. Essentially, it involves providing IT resources such as servers and storage over the internet whenever you need them. Instead of purchasing and managing physical servers, businesses can rent these resources from major providers like AWS or Google Cloud. It's a straightforward concept, don't you think?",
+    "duration_estimate": 27.599999999999998
+  },
+  {
+    "slide_number": 7,
+    "transcript": "Welcome to our exploration of the core characteristics of cloud computing. Today, we'll uncover why cloud computing is a fundamental and transformative force in technology. This is just the beginning, so let's dive in and discover what makes it such a game-changer!",
+    "duration_estimate": 25.8
+  },
+  {
+    "slide_number": 8,
+    "transcript": "Welcome to our exploration of the core services of cloud computing. Today, we'll delve into the fundamental components, discuss security and operational aspects, and uncover some of the latest technological advancements. Let's begin our journey to understand why cloud computing is indispensable in today\u2019s digital landscape!",
+    "duration_estimate": 24.599999999999998
+  },
+  {
+    "slide_number": 9,
+    "transcript": "Welcome to our exploration of cloud deployment models. In this introductory segment, we'll set the stage for the fascinating details that lie ahead. We'll examine how each model uniquely caters to different organizational needs. Let's dive in and discover how these models can work for you!",
+    "duration_estimate": 25.2
+  },
+  {
+    "slide_number": 10,
+    "transcript": "Let's delve into cloud service models, focusing on Software as a Service (SaaS) and Platform as a Service (PaaS). SaaS delivers software over the internet, similar to your favorite apps, eliminating the need for installation or maintenance. On the other hand, PaaS provides developers with the tools and environment to create applications without the hassle of managing infrastructure. It's fascinating how these models integrate within the cloud ecosystem. Let's explore their synergy and impact further.",
+    "duration_estimate": 50.4
+  },
+  {
+    "slide_number": 11,
+    "transcript": "Let's explore Infrastructure as a Service, or IaaS. Instead of purchasing and setting up physical servers, you can rent the resources you need from providers like AWS, Azure, or Google Cloud. These providers manage the hardware, allowing you to concentrate on your applications and configurations. This approach not only simplifies your workload but also offers flexibility and scalability. Isn't that impressive?",
+    "duration_estimate": 33.6
+  },
+  {
+    "slide_number": 12,
+    "transcript": "Let's explore Platform as a Service, or PaaS. This approach allows you to build, deploy, and manage applications without the hassle of managing infrastructure. Services like AWS Elastic Beanstalk and Google Cloud App Engine take care of the complex backend tasks, enabling you to concentrate on your application development.",
+    "duration_estimate": 31.2
+  },
+  {
+    "slide_number": 13,
+    "transcript": "Let's explore Software as a Service, or SaaS. With SaaS, you can access software directly through your web browser, eliminating the need for installations or updates. Just log in, and you're ready to go. It's straightforward and convenient!",
+    "duration_estimate": 28.2
+  },
+  {
+    "slide_number": 14,
+    "transcript": "Hello, everyone. Today, we\u2019re going to explore the key differences between various cloud service models. Understanding these distinctions is crucial, and I promise it will be both enlightening and engaging. Let's dive in!",
+    "duration_estimate": 22.2
+  },
+  {
+    "slide_number": 15,
+    "transcript": "Let's explore the case study of Audi's transition to AWS. Audi faced significant challenges with their online car configurator, which was previously hosted on-premises. This setup required numerous additional servers to handle traffic spikes, leading to inefficiencies. Their solution? Audi migrated to AWS EC2, utilizing Terraform for automated provisioning. They also implemented Kubernetes for seamless deployments and Karpenter for efficient auto-scaling. This strategic approach greatly optimized their operations. Isn't it fascinating to see how technology can transform business processes?",
+    "duration_estimate": 46.8
+  },
+  {
+    "slide_number": 16,
+    "transcript": "Let's explore how Audi transformed their car configurator using AWS. Initially, Audi faced challenges with their on-premises setup, which required overprovisioning servers and delayed new environment deployments by days. By leveraging AWS services like EC2 and EKS, Audi achieved remarkable improvements. They reduced compute costs by 63% and enhanced startup times by 20%. Quite impressive, wouldn't you agree?",
+    "duration_estimate": 42.6
+  },
+  {
+    "slide_number": 17,
+    "transcript": "Thank you for joining us for this module on Cloud and Edge Computing. We\u2019ve now reached the conclusion, and we appreciate your participation. If you have any questions, please refer to the contact information on the slide to get in touch via email or phone. We encourage you to explore our website for additional resources. For the latest updates, follow us on social media. We hope you found this session insightful and valuable. Thank you for your time!",
+    "duration_estimate": 60.599999999999994
+  }
+]
