@@ -1,4 +1,6 @@
-import { type ProcessingJob, type InsertProcessingJob } from "@shared/schema";
+import { type ProcessingJob, type InsertProcessingJob, jobs, type Job } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -8,46 +10,84 @@ export interface IStorage {
   deleteJob(id: string): Promise<boolean>;
 }
 
-export class MemStorage implements IStorage {
-  private jobs: Map<string, ProcessingJob>;
-
-  constructor() {
-    this.jobs = new Map();
-  }
-
+export class DatabaseStorage implements IStorage {
   async getJob(id: string): Promise<ProcessingJob | undefined> {
-    return this.jobs.get(id);
+    const [job] = await db.select().from(jobs).where(eq(jobs.uuid, id));
+    if (!job) return undefined;
+    
+    return {
+      id: job.uuid,
+      filename: job.filename,
+      status: job.status as any,
+      progress: job.progress,
+      error_message: job.error_message || undefined,
+      created_at: job.created_at.toISOString(),
+      completed_at: job.completed_at?.toISOString(),
+      output_files: job.output_files || undefined,
+    };
   }
 
   async createJob(insertJob: InsertProcessingJob): Promise<ProcessingJob> {
-    const id = randomUUID();
-    const job: ProcessingJob = {
-      ...insertJob,
-      id,
-      created_at: new Date().toISOString(),
+    const uuid = randomUUID();
+    const [job] = await db
+      .insert(jobs)
+      .values({
+        uuid,
+        filename: insertJob.filename,
+        status: insertJob.status,
+        progress: insertJob.progress || 0,
+        error_message: insertJob.error_message,
+        completed_at: insertJob.completed_at ? new Date(insertJob.completed_at) : undefined,
+        output_files: insertJob.output_files,
+      })
+      .returning();
+
+    return {
+      id: job.uuid,
+      filename: job.filename,
+      status: job.status as any,
+      progress: job.progress,
+      error_message: job.error_message || undefined,
+      created_at: job.created_at.toISOString(),
+      completed_at: job.completed_at?.toISOString(),
+      output_files: job.output_files || undefined,
     };
-    this.jobs.set(id, job);
-    return job;
   }
 
   async updateJob(id: string, updates: Partial<ProcessingJob>): Promise<ProcessingJob | undefined> {
-    const existingJob = this.jobs.get(id);
-    if (!existingJob) {
-      return undefined;
-    }
+    const updateData: any = {};
+    
+    if (updates.filename !== undefined) updateData.filename = updates.filename;
+    if (updates.status !== undefined) updateData.status = updates.status;
+    if (updates.progress !== undefined) updateData.progress = updates.progress;
+    if (updates.error_message !== undefined) updateData.error_message = updates.error_message;
+    if (updates.completed_at !== undefined) updateData.completed_at = new Date(updates.completed_at);
+    if (updates.output_files !== undefined) updateData.output_files = updates.output_files;
 
-    const updatedJob: ProcessingJob = {
-      ...existingJob,
-      ...updates,
+    const [job] = await db
+      .update(jobs)
+      .set(updateData)
+      .where(eq(jobs.uuid, id))
+      .returning();
+
+    if (!job) return undefined;
+
+    return {
+      id: job.uuid,
+      filename: job.filename,
+      status: job.status as any,
+      progress: job.progress,
+      error_message: job.error_message || undefined,
+      created_at: job.created_at.toISOString(),
+      completed_at: job.completed_at?.toISOString(),
+      output_files: job.output_files || undefined,
     };
-
-    this.jobs.set(id, updatedJob);
-    return updatedJob;
   }
 
   async deleteJob(id: string): Promise<boolean> {
-    return this.jobs.delete(id);
+    const result = await db.delete(jobs).where(eq(jobs.uuid, id));
+    return result.rowCount ? result.rowCount > 0 : false;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

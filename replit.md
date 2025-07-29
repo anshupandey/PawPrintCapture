@@ -25,9 +25,9 @@ Preferred communication style: Simple, everyday language.
 - **API Layer**: RESTful endpoints with proper error handling and logging
 
 ### Data Storage Solutions
-- **Database**: PostgreSQL with Drizzle ORM (configured but using in-memory storage currently)
+- **Database**: PostgreSQL with Drizzle ORM (now active with job persistence)
 - **File Storage**: Temporary local storage with automatic cleanup
-- **Session Management**: In-memory storage for processing jobs
+- **Job Management**: Database-backed storage with PostgreSQL
 
 ## Key Components
 
