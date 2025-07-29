@@ -1,0 +1,156 @@
+Objective: Create a full‑stack web application that lets users upload a PowerPoint file and automatically transforms it into a high‑quality self‑learning module. The application should extract all content (text and images), generate a human‑sounding instructional transcript using state‑of‑the‑art large language models, synthesize natural audio narration using configurable text‑to‑speech providers (OpenAI, Google Cloud, ElevenLabs), embed the audio back into the slides to produce a narrated PowerPoint, and render a polished MP4 video. The system must allow users to supply different API keys for the chosen services, and it should provide both a narrated PPTX and a corresponding MP4 as outputs.
+
+1. Front‑end requirements
+Upload interface
+
+Build a clean, intuitive upload page using a modern front‑end framework (e.g., React or Next.js).
+
+Include input fields for:
+
+PowerPoint file selection (accept only .pptx).
+
+API key fields: OpenAI API key, Google Cloud TTS API key, ElevenLabs API key. Clearly label each and hide the keys on input.
+
+A dropdown or radio buttons to choose which text‑to‑speech provider to use (OpenAI, Google, ElevenLabs).
+
+Provide helper text explaining what each key is used for, and that only one TTS provider will be used at a time.
+
+Progress display
+
+Show status updates for each processing stage: text extraction, transcript generation, transcript refinement, audio synthesis, embedding audio, PDF conversion, MP4 rendering.
+
+Handle errors gracefully (e.g., invalid PPTX, missing API key for chosen provider) and display user‑friendly messages.
+
+Download & preview
+
+After processing, present download links/buttons for:
+
+The narrated PowerPoint (with audio embedded).
+
+The MP4 video.
+
+The original PPT converted to PDF (for reference).
+
+Optionally a JSON file containing the generated transcripts.
+
+Allow the user to preview the first slide’s audio or the first few seconds of the video directly in the browser.
+
+2. Back‑end requirements
+File handling & storage
+
+Use a Python back‑end framework (FastAPI is recommended) to handle file uploads and API requests.
+
+Save the uploaded PPTX in a temporary working directory.
+
+Ensure that files are cleaned up after processing or after a set expiration period.
+
+Slide extraction
+
+Use python-pptx to read the uploaded PPTX, extract text from all shapes on each slide, and identify images.
+
+Convert the PPTX into a PDF using LibreOffice or a similar tool.
+
+Use an OCR library (e.g., Tesseract via pytesseract) to extract text from images when relevant. Combine OCR text with slide text to create a complete picture of slide content.
+
+Maintain a data structure mapping each slide index to:
+
+Raw text extracted from text shapes.
+
+OCR text extracted from images.
+
+Any alternative text or notes attached to the slide.
+
+Transcript generation
+
+Compose a prompt for a large language model (e.g., OpenAI GPT‑4) that includes:
+
+All extracted text (including OCR) for each slide.
+
+Context about the course/module (if available).
+
+Instructions to write a clear, concise, and conversational narration for the slide.
+
+Guidance on instructional design best practices (e.g., logically structure information, engage the listener, signpost key concepts, provide examples, and conclude with summaries).
+
+Call the OpenAI API (or another provider if specified) with this prompt to generate a draft transcript for each slide.
+
+Critique and refine each draft transcript, either by sending it to an additional critique prompt or by using the same model to improve clarity, tone, and flow. Ensure the final text reads naturally and covers all important content from the slide.
+
+Audio synthesis
+
+Depending on the selected provider:
+
+OpenAI: Use the OpenAI text‑to‑speech API (e.g., the tts endpoint if available) to synthesize high‑quality audio for each transcript segment.
+
+Google Cloud TTS: Use Google Cloud’s Text‑to‑Speech API, selecting a natural neural voice appropriate for the language of the transcript.
+
+ElevenLabs: Use ElevenLabs’ API to synthesize audio with a voice model that sounds as natural as possible; allow the user to specify voice settings (gender, style) if supported.
+
+Normalize volume levels across slides, add slight pauses where appropriate, and ensure each audio file is saved in a format supported by PowerPoint (e.g., MP3 or WAV).
+
+Embedding audio into PPT
+
+Use python-pptx to open a copy of the original PPTX.
+
+For each slide:
+
+Insert the corresponding audio file as a movie object.
+
+Set it to play automatically when the slide opens.
+
+Place a small speaker icon near the bottom corner.
+
+Save the narrated PPTX (e.g., narrated_<original_name>.pptx).
+
+Video rendering
+
+Convert each slide of the narrated PPTX (or the original PPTX) into a high‑resolution image (PNG) using LibreOffice or an alternative library.
+
+Assemble the images and audio files into a synchronized MP4 using a library such as OpenCV or FFmpeg. Each image should remain on screen for the exact duration of its corresponding audio file.
+
+Encode the video with a widely supported codec (e.g., H.264) and include a quiet background music track if desired.
+
+Output packaging
+
+Deliver the narrated PPTX and MP4 to the user via secure download endpoints.
+
+Provide the converted PDF version of the original PPT and a JSON file containing the transcripts.
+
+Optionally, wrap the final assets into a SCORM package if LMS integration is needed.
+
+3. Instructional design best practices for the transcripts
+Write in a conversational tone, using “we” or “you” to engage the learner.
+
+Start each narration with an overview of what the slide covers.
+
+Break complex information into smaller, digestible pieces.
+
+Incorporate examples or short scenarios to illustrate key points.
+
+Summarize the main ideas at the end of each slide or section.
+
+Use clear signposting language (e.g., “First, we’ll discuss…”, “Next, let’s explore…”) to help learners follow the structure.
+
+Match the pace of the narration to the complexity of the slide; allow the user enough time to absorb visuals.
+
+4. API key management & configuration
+Create a configuration component in the front end to securely store API keys in the session or browser memory during processing.
+
+Transmit keys to the back end only when necessary (e.g., when calling OpenAI, Google Cloud or ElevenLabs).
+
+Ensure that no keys are logged or stored permanently on the server. Provide clear documentation to users about how their keys are used and deleted.
+
+5. Testing & validation
+Include a sample PPTX file in the repository for quick testing.
+
+Write unit tests for:
+
+Slide extraction and OCR accuracy.
+
+Correct construction of LLM prompts and parsing of responses.
+
+Audio synthesis integration with each TTS provider.
+
+Proper embedding of audio in PPTX and synchronization in the video.
+
+Validate that the narrated PPT plays audio automatically in standard PowerPoint viewers and that the MP4 is synchronized.
