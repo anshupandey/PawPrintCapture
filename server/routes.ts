@@ -103,6 +103,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update job status (PATCH endpoint for Python service)
+  app.patch("/api/jobs/:id", async (req, res) => {
+    try {
+      const { status, progress, error_message, output_files } = req.body;
+      
+      const updates: any = {};
+      if (status !== undefined) updates.status = status;
+      if (progress !== undefined) updates.progress = progress;
+      if (error_message !== undefined) updates.error_message = error_message;
+      if (output_files !== undefined) updates.output_files = output_files;
+      if (status === 'completed') updates.completed_at = new Date().toISOString();
+
+      const updatedJob = await storage.updateJob(req.params.id, updates);
+      
+      if (!updatedJob) {
+        return res.status(404).json({ error: "Job not found" });
+      }
+      
+      res.json(updatedJob);
+    } catch (error) {
+      console.error('Update job error:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : "Failed to update job status" 
+      });
+    }
+  });
+
   // Download file endpoint
   app.get("/api/download/:jobId/:fileType", async (req, res) => {
     try {

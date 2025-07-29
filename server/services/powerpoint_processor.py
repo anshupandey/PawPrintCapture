@@ -49,12 +49,17 @@ class PowerPointProcessor:
             }
             if error_message:
                 update_data['error_message'] = error_message
-                
-            # In a real implementation, this would make an HTTP request to update the job
-            # For now, we'll write to a status file that the server can monitor
-            status_file = self.work_dir / f"job_{self.job_id}_status.json"
-            with open(status_file, 'w') as f:
-                json.dump(update_data, f)
+            
+            # Make HTTP request to update job status
+            import requests
+            response = requests.patch(
+                f'http://localhost:5000/api/jobs/{self.job_id}',
+                json=update_data,
+                timeout=10
+            )
+            
+            if response.status_code != 200:
+                print(f"Failed to update job status: HTTP {response.status_code}")
                 
         except Exception as e:
             print(f"Failed to update job status: {e}")
@@ -82,8 +87,13 @@ class PowerPointProcessor:
                 
                 # Extract text from shapes
                 for shape in slide.shapes:
-                    if hasattr(shape, "text") and hasattr(shape.text, 'strip') and shape.text.strip():
-                        slide_data['text_content'].append(shape.text.strip())
+                    if hasattr(shape, 'text_frame') and shape.text_frame:
+                        text_content = ""
+                        for paragraph in shape.text_frame.paragraphs:
+                            for run in paragraph.runs:
+                                text_content += run.text
+                        if text_content.strip():
+                            slide_data['text_content'].append(text_content.strip())
                 
                 # Extract images and perform OCR
                 for shape in slide.shapes:
@@ -93,7 +103,7 @@ class PowerPointProcessor:
                                 image = Image.open(io.BytesIO(shape.image.blob))
                                 ocr_text = pytesseract.image_to_string(image).strip()
                                 if ocr_text:
-                                    slide_data['image_text'].append(ocr_text)
+                                    slide_data['text_content'].append(f"[Image text: {ocr_text}]")
                         except Exception as e:
                             print(f"OCR failed for slide {slide_idx + 1}: {e}")
                 
