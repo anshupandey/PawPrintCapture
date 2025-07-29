@@ -258,21 +258,28 @@ class PowerPointProcessor:
             
             # Update job with output file paths
             output_files = {
-                'narrated_pptx': f"/api/download/{self.job_id}/narrated_pptx",
-                'video_mp4': f"/api/download/{self.job_id}/video_mp4",
-                'pdf': f"/api/download/{self.job_id}/pdf",
-                'transcripts_json': f"/api/download/{self.job_id}/transcripts_json"
+                'narrated_pptx': str(final_pptx),
+                'video_mp4': str(final_video), 
+                'pdf': str(final_pdf),
+                'transcripts_json': str(final_transcripts)
             }
             
-            # Write final status
-            status_file = self.work_dir / f"job_{self.job_id}_status.json"
-            with open(status_file, 'w') as f:
-                json.dump({
-                    'status': 'completed',
-                    'progress': 100,
-                    'output_files': output_files,
-                    'completed_at': time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime())
-                }, f)
+            # Update job status with output files via HTTP API
+            import requests
+            try:
+                response = requests.patch(
+                    f'http://localhost:5000/api/jobs/{self.job_id}',
+                    json={
+                        'status': 'completed',
+                        'progress': 100,
+                        'output_files': output_files
+                    },
+                    timeout=10
+                )
+                if response.status_code != 200:
+                    print(f"Failed to update job with output files: HTTP {response.status_code}")
+            except Exception as e:
+                print(f"Failed to update job with output files: {e}")
             
         except Exception as e:
             error_msg = f"Failed to save outputs: {str(e)}"
@@ -298,7 +305,7 @@ class PowerPointProcessor:
             video_file = self.render_video(narrated_pptx)
             self.save_outputs(narrated_pptx, video_file)
             
-            self.update_job_status('completed', 100)
+            # Final status update is handled in save_outputs
             
         except Exception as e:
             print(f"Processing failed: {e}")
