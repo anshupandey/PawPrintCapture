@@ -16,6 +16,7 @@ import { Download, Play, FileText, Video, FileImage } from "lucide-react";
 export default function Upload() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
+  const [showCompletedJob, setShowCompletedJob] = useState<string | null>("dbbf7d54-c4ce-4147-a101-d72759741c2c");
   const { toast } = useToast();
 
   const form = useForm<UploadRequest>({
@@ -39,6 +40,12 @@ export default function Upload() {
     refetchInterval: jobId && !["completed", "error"].includes(
       queryClient.getQueryData<ProcessingJob>(["/api/jobs", jobId])?.status || ""
     ) ? 2000 : false,
+  });
+
+  // Query for completed job to show downloads
+  const { data: completedJob } = useQuery<ProcessingJob>({
+    queryKey: ["/api/jobs", showCompletedJob],
+    enabled: !!showCompletedJob,
   });
 
   const uploadMutation = useMutation({
@@ -113,9 +120,21 @@ export default function Upload() {
     uploadMutation.mutate({ ...data, file: uploadedFile });
   };
 
-  const downloadFile = (url: string, filename: string) => {
+  const downloadFile = (filePath: string, filename: string) => {
+    // Extract job ID and file type from the file path
+    const pathParts = filePath.split('/');
+    const jobIdFromPath = pathParts[1]; // outputs/jobId/filename
+    const actualFilename = pathParts[2];
+    
+    let fileType = '';
+    if (actualFilename.includes('narrated_presentation')) fileType = 'narrated_pptx';
+    else if (actualFilename.includes('learning_module')) fileType = 'video_mp4';  
+    else if (actualFilename.includes('original_presentation')) fileType = 'pdf';
+    else if (actualFilename.includes('transcripts')) fileType = 'transcripts_json';
+    
+    const downloadUrl = `/api/download/${jobIdFromPath}/${fileType}`;
     const link = document.createElement("a");
-    link.href = url;
+    link.href = downloadUrl;
     link.download = filename;
     document.body.appendChild(link);
     link.click();
@@ -140,6 +159,81 @@ export default function Upload() {
             transcripts and synchronized audio. Perfect for creating engaging educational content.
           </p>
         </div>
+
+        {/* Completed Job Downloads Section */}
+        {completedJob?.status === "completed" && completedJob.output_files && (
+          <Card className="shadow-lg border-green-200 bg-green-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-800">
+                <Download className="h-6 w-6" />
+                Previous Job Completed - Download Available
+              </CardTitle>
+              <CardDescription className="text-green-700">
+                Your previous PowerPoint conversion is ready! Download your files below.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {completedJob.output_files.narrated_pptx && (
+                  <Button
+                    variant="outline"
+                    className="h-auto p-4 flex flex-col items-center gap-2 border-green-300 hover:bg-green-100"
+                    onClick={() => downloadFile(completedJob.output_files!.narrated_pptx!, "narrated_presentation.pptx")}
+                  >
+                    <FileText className="h-8 w-8 text-green-600" />
+                    <span className="font-medium">Narrated PowerPoint</span>
+                    <span className="text-sm text-gray-600">PPTX with embedded audio</span>
+                  </Button>
+                )}
+
+                {completedJob.output_files.video_mp4 && (
+                  <Button
+                    variant="outline"
+                    className="h-auto p-4 flex flex-col items-center gap-2 border-green-300 hover:bg-green-100"
+                    onClick={() => downloadFile(completedJob.output_files!.video_mp4!, "learning_module.mp4")}
+                  >
+                    <Video className="h-8 w-8 text-green-600" />
+                    <span className="font-medium">Video Module</span>
+                    <span className="text-sm text-gray-600">MP4 with synchronized audio</span>
+                  </Button>
+                )}
+
+                {completedJob.output_files.pdf && (
+                  <Button
+                    variant="outline"
+                    className="h-auto p-4 flex flex-col items-center gap-2 border-green-300 hover:bg-green-100"
+                    onClick={() => downloadFile(completedJob.output_files!.pdf!, "original_presentation.pdf")}
+                  >
+                    <FileImage className="h-8 w-8 text-green-600" />
+                    <span className="font-medium">PDF Reference</span>
+                    <span className="text-sm text-gray-600">Original slides as PDF</span>
+                  </Button>
+                )}
+
+                {completedJob.output_files.transcripts_json && (
+                  <Button
+                    variant="outline"
+                    className="h-auto p-4 flex flex-col items-center gap-2 border-green-300 hover:bg-green-100"
+                    onClick={() => downloadFile(completedJob.output_files!.transcripts_json!, "transcripts.json")}
+                  >
+                    <FileText className="h-8 w-8 text-green-600" />
+                    <span className="font-medium">Transcripts</span>
+                    <span className="text-sm text-gray-600">Generated narration text</span>
+                  </Button>
+                )}
+              </div>
+              <div className="flex justify-center pt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowCompletedJob(null)}
+                  className="border-green-300 text-green-700 hover:bg-green-100"
+                >
+                  Hide Downloads
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {!jobId ? (
           <Card className="shadow-lg">
