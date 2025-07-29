@@ -87,6 +87,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get completed jobs endpoint
+  app.get("/api/jobs/completed", async (req, res) => {
+    try {
+      const completedJobs = await storage.getCompletedJobs();
+      res.json(completedJobs);
+    } catch (error) {
+      console.error('Failed to fetch completed jobs:', error);
+      res.status(500).json({ error: "Failed to fetch completed jobs" });
+    }
+  });
+
   // Get job status
   app.get("/api/jobs/:id", async (req, res) => {
     try {

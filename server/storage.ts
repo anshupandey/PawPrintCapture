@@ -1,6 +1,6 @@
 import { type ProcessingJob, type InsertProcessingJob, jobs, type Job } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -8,6 +8,7 @@ export interface IStorage {
   createJob(job: InsertProcessingJob): Promise<ProcessingJob>;
   updateJob(id: string, updates: Partial<ProcessingJob>): Promise<ProcessingJob | undefined>;
   deleteJob(id: string): Promise<boolean>;
+  getCompletedJobs(): Promise<ProcessingJob[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -87,6 +88,26 @@ export class DatabaseStorage implements IStorage {
   async deleteJob(id: string): Promise<boolean> {
     const result = await db.delete(jobs).where(eq(jobs.uuid, id));
     return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async getCompletedJobs(): Promise<ProcessingJob[]> {
+    const completedJobs = await db
+      .select()
+      .from(jobs)
+      .where(eq(jobs.status, 'completed'))
+      .orderBy(desc(jobs.completed_at))
+      .limit(10); // Get last 10 completed jobs
+
+    return completedJobs.map(job => ({
+      id: job.uuid,
+      filename: job.filename,
+      status: job.status as any,
+      progress: job.progress,
+      error_message: job.error_message || undefined,
+      created_at: job.created_at.toISOString(),
+      completed_at: job.completed_at?.toISOString(),
+      output_files: job.output_files || undefined,
+    }));
   }
 }
 

@@ -48,6 +48,12 @@ export default function Upload() {
     enabled: !!showCompletedJob,
   });
 
+  // Query for previous completed jobs
+  const { data: previousJobs = [] } = useQuery<ProcessingJob[]>({
+    queryKey: ["/api/jobs/completed"],
+    enabled: !jobId, // Only fetch when not currently processing
+  });
+
   const uploadMutation = useMutation({
     mutationFn: async (data: UploadRequest & { file: File }) => {
       const formData = new FormData();
@@ -131,6 +137,7 @@ export default function Upload() {
     else if (actualFilename.includes('learning_module')) fileType = 'video_mp4';  
     else if (actualFilename.includes('original_presentation')) fileType = 'pdf';
     else if (actualFilename.includes('transcripts')) fileType = 'transcripts_json';
+    else if (actualFilename.includes('audio_files')) fileType = 'audio_zip';
     
     const downloadUrl = `/api/download/${jobIdFromPath}/${fileType}`;
     const link = document.createElement("a");
@@ -242,6 +249,46 @@ export default function Upload() {
                 >
                   Hide Downloads
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Previous Completed Jobs Section */}
+        {!jobId && previousJobs.length > 0 && (
+          <Card className="shadow-lg border-blue-200 bg-blue-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-blue-800">
+                <Download className="h-6 w-6" />
+                Previous Conversions
+              </CardTitle>
+              <CardDescription className="text-blue-700">
+                Your previously completed PowerPoint conversions are available for download.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {previousJobs.map((job) => (
+                  <div
+                    key={job.id}
+                    className="flex items-center justify-between p-3 bg-white rounded-lg border border-blue-200"
+                  >
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900">{job.filename}</h4>
+                      <p className="text-sm text-gray-500">
+                        Completed {job.completed_at ? new Date(job.completed_at).toLocaleDateString() : 'Recently'}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowCompletedJob(job.id)}
+                      className="ml-4 border-blue-300 text-blue-700 hover:bg-blue-100"
+                    >
+                      View Downloads
+                    </Button>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>

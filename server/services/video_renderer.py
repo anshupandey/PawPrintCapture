@@ -50,78 +50,13 @@ class VideoRenderer:
             raise Exception(f"Video rendering failed: {str(e)}")
     
     def _convert_slides_to_images(self, pptx_path: str, work_dir: Path) -> Dict[int, str]:
-        """Convert PowerPoint slides to high-resolution images using python-pptx and PIL"""
+        """Convert PowerPoint slides to high-resolution images using LibreOffice and pdftoppm"""
         
         images_dir = work_dir / "slide_images"
         images_dir.mkdir(exist_ok=True)
         
-        try:
-            from pptx import Presentation
-            from PIL import Image, ImageDraw, ImageFont
-            import io
-            
-            # Load the presentation
-            prs = Presentation(pptx_path)
-            slide_images = {}
-            
-            # Convert each slide to image
-            for slide_idx, slide in enumerate(prs.slides):
-                slide_number = slide_idx + 1
-                
-                # Create high-resolution image (1920x1080)
-                img = Image.new('RGB', (1920, 1080), 'white')
-                draw = ImageDraw.Draw(img)
-                
-                # Extract slide content and render as image
-                try:
-                    # Get slide layout information
-                    slide_width = prs.slide_width
-                    slide_height = prs.slide_height
-                    
-                    # Scale factors for 1920x1080 output
-                    scale_x = 1920 / slide_width
-                    scale_y = 1080 / slide_height
-                    scale = min(scale_x, scale_y)  # Maintain aspect ratio
-                    
-                    # Calculate positioning to center the slide
-                    scaled_width = int(slide_width * scale)
-                    scaled_height = int(slide_height * scale)
-                    offset_x = (1920 - scaled_width) // 2
-                    offset_y = (1080 - scaled_height) // 2
-                    
-                    # Process shapes on the slide
-                    for shape in slide.shapes:
-                        self._render_shape_to_image(shape, draw, offset_x, offset_y, scale)
-                    
-                except Exception as e:
-                    print(f"Warning: Could not fully render slide {slide_number}: {e}")
-                    # Create a basic slide with slide number
-                    try:
-                        font = ImageFont.load_default()
-                        draw.text((50, 50), f"Slide {slide_number}", fill='black', font=font)
-                    except:
-                        draw.text((50, 50), f"Slide {slide_number}", fill='black')
-                
-                # Save the image
-                image_path = images_dir / f"slide_{slide_number:03d}.png"
-                img.save(image_path, 'PNG', dpi=(300, 300))
-                slide_images[slide_number] = str(image_path)
-            
-            # Fallback: Use LibreOffice if python-pptx fails
-            if not slide_images:
-                return self._convert_slides_with_libreoffice(pptx_path, images_dir)
-            
-            return slide_images
-            
-        except ImportError:
-            # Fallback to LibreOffice if python-pptx is not available
-            return self._convert_slides_with_libreoffice(pptx_path, images_dir)
-        except Exception as e:
-            # Try LibreOffice as fallback
-            try:
-                return self._convert_slides_with_libreoffice(pptx_path, images_dir)
-            except:
-                raise Exception(f"Failed to convert slides to images: {str(e)}")
+        # Use LibreOffice as the primary method for better fidelity
+        return self._convert_slides_with_libreoffice(pptx_path, images_dir)
     
     def _render_shape_to_image(self, shape, draw, offset_x, offset_y, scale):
         """Render a PowerPoint shape to PIL image"""
@@ -156,11 +91,12 @@ class VideoRenderer:
             pass
     
     def _convert_slides_with_libreoffice(self, pptx_path: str, images_dir: Path) -> Dict[int, str]:
-        """Fallback method using LibreOffice to convert slides to images"""
+        """Primary method using LibreOffice to convert slides to high-quality images"""
         
         try:
-            # First, convert PPTX to PDF to get page count
-            pdf_path = images_dir / "temp_presentation.pdf"
+            print(f"Converting PPTX to PDF: {pptx_path}")
+            
+            # First, convert PPTX to PDF using LibreOffice
             cmd = [
                 "libreoffice",
                 "--headless",
@@ -169,7 +105,7 @@ class VideoRenderer:
                 pptx_path
             ]
             
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
             if result.returncode != 0:
                 raise Exception(f"LibreOffice PDF conversion failed: {result.stderr}")
             
@@ -177,52 +113,67 @@ class VideoRenderer:
             pdf_files = list(images_dir.glob("*.pdf"))
             if pdf_files:
                 pdf_path = pdf_files[0]
+                print(f"PDF created: {pdf_path}")
             else:
                 raise Exception("PDF not created by LibreOffice")
             
-            # Convert PDF pages to PNG images using ImageMagick or pdftoppm
+            # Convert PDF pages to high-quality PNG images using pdftoppm
             slide_images = {}
+            print(f"Converting PDF to images using pdftoppm...")
+            
             try:
-                # Try using pdftoppm (part of poppler-utils)
+                # Use pdftoppm for high-quality conversion
                 cmd = [
                     "pdftoppm",
                     "-png",
-                    "-r", "150",  # 150 DPI for good quality
+                    "-r", "200",  # Higher DPI for better quality
+                    "-cropbox",   # Use crop box for better framing
                     str(pdf_path),
                     str(images_dir / "slide")
                 ]
                 
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
                 
                 if result.returncode == 0:
+                    print(f"pdftoppm conversion successful")
                     # Map generated images to slide numbers
-                    for image_file in images_dir.glob("slide-*.png"):
+                    for image_file in sorted(images_dir.glob("slide-*.png")):
                         try:
                             # pdftoppm creates files like "slide-1.png", "slide-2.png"
                             slide_num = int(image_file.stem.split('-')[-1])
                             slide_images[slide_num] = str(image_file)
+                            print(f"Mapped slide {slide_num}: {image_file}")
                         except (ValueError, IndexError):
                             continue
-                
+                else:
+                    print(f"pdftoppm failed: {result.stderr}")
+                    
             except FileNotFoundError:
+                print("pdftoppm not found, trying ImageMagick...")
                 # Try ImageMagick as fallback
                 try:
                     cmd = [
                         "convert",
-                        "-density", "150",
+                        "-density", "200",
+                        "-quality", "95",
                         str(pdf_path),
                         str(images_dir / "slide_%03d.png")
                     ]
                     
-                    result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+                    result = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
                     
                     if result.returncode == 0:
-                        for image_file in images_dir.glob("slide_*.png"):
+                        print("ImageMagick conversion successful")
+                        for image_file in sorted(images_dir.glob("slide_*.png")):
                             try:
-                                slide_num = int(image_file.stem.split('_')[-1])
+                                # ImageMagick creates files like "slide_000.png", "slide_001.png"
+                                slide_num = int(image_file.stem.split('_')[-1]) + 1  # Convert 0-based to 1-based
                                 slide_images[slide_num] = str(image_file)
+                                print(f"Mapped slide {slide_num}: {image_file}")
                             except (ValueError, IndexError):
                                 continue
+                    else:
+                        print(f"ImageMagick failed: {result.stderr}")
                 
                 except FileNotFoundError:
                     raise Exception("Neither pdftoppm nor ImageMagick found for PDF to image conversion")
@@ -231,6 +182,10 @@ class VideoRenderer:
             if pdf_path.exists():
                 pdf_path.unlink()
             
+            if not slide_images:
+                raise Exception("No slide images were generated")
+            
+            print(f"Successfully converted {len(slide_images)} slides to images")
             return slide_images
             
         except subprocess.TimeoutExpired:

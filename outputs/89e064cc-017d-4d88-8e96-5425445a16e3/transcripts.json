@@ -1,0 +1,92 @@
+[
+  {
+    "slide_number": 1,
+    "transcript": "Welcome to Module 1, where we embark on an exploration of Industrial IoT. Today, we'll focus on the groundbreaking advancements expected in India by 2025. Join us as we uncover how IoT and IIoT are revolutionizing industries. Let\u2019s dive in!",
+    "duration_estimate": 24.0
+  },
+  {
+    "slide_number": 2,
+    "transcript": "Welcome to our exploration of the Industrial Internet of Things, or IIoT. In this session, we'll begin with an overview, delve into emerging trends, and then dissect the architecture and key components. Let's dive in and discover the exciting possibilities together!",
+    "duration_estimate": 24.599999999999998
+  },
+  {
+    "slide_number": 3,
+    "transcript": "Hello, everyone, and welcome to our session on the Internet of Things (IoT) and the Industrial Internet of Things (IIoT). Today, we'll explore how these technologies are transforming operations into smart, efficient systems. Make yourself comfortable as we embark on this intriguing journey over the next 30 minutes. Are you ready to dive in? Let's get started!",
+    "duration_estimate": 25.2
+  },
+  {
+    "slide_number": 4,
+    "transcript": "Hello, everyone! Today, we're exploring the fascinating world of the Internet of Things (IoT) and the Industrial Internet of Things (IIoT). In this session, we'll discover how these technologies are transforming our lives and industries as we approach 2025. So, let's dive in and see how everything is becoming interconnected. Ready to get started?",
+    "duration_estimate": 24.599999999999998
+  },
+  {
+    "slide_number": 5,
+    "transcript": "Welcome to our exploration of the Internet of Things, or IoT, along with its industrial counterpart, the Industrial Internet of Things, or IIoT. By 2025, these technologies will revolutionize our interaction with devices and data. Let's delve into this exciting transformation together!",
+    "duration_estimate": 24.599999999999998
+  },
+  {
+    "slide_number": 6,
+    "transcript": "Let's explore what the \"Internet\" truly is. Essentially, it's a network that connects various devices. This connection can be established through wired means, like Ethernet cables, or wirelessly, using technologies such as Wi-Fi and Bluetooth. These networks enable our devices to communicate and share information. For instance, Bluetooth allows your phone to connect to wireless headphones. Isn't that fascinating?",
+    "duration_estimate": 36.6
+  },
+  {
+    "slide_number": 7,
+    "transcript": "Let's explore the fascinating world of physical devices, often referred to as \"things.\" These can range from a smart water bottle to a sophisticated factory machine. As illustrated here, these devices collect and share data, enhancing our daily lives with greater ease and efficiency. Picture a sprinkler system that automatically activates when the soil becomes dry. Isn't that impressive?",
+    "duration_estimate": 40.199999999999996
+  },
+  {
+    "slide_number": 8,
+    "transcript": "Welcome to our exploration of the Internet of Things, or IoT. Simply put, IoT is about connecting everyday physical devices to the internet, enabling them to communicate with each other. Imagine your home's thermostat, lights, and security cameras seamlessly interacting online. This interconnectedness makes our lives more efficient and convenient. Let's dive deeper into how this fascinating technology works and its impact on our daily routines.",
+    "duration_estimate": 32.4
+  },
+  {
+    "slide_number": 9,
+    "transcript": "Let's explore how the Internet of Things, or IoT, operates through a straightforward four-step process: Sense, Connect, Analyze, and Act. This process empowers devices to independently gather and process data. Fascinating, isn't it? Let's delve deeper into each step!",
+    "duration_estimate": 28.799999999999997
+  },
+  {
+    "slide_number": 10,
+    "transcript": "Welcome to our exploration of the Industrial Internet of Things, or IIoT, as we look ahead to 2025. This area represents an intriguing fusion of technology and industry. In this section, we'll introduce you to the basics of both IoT and IIoT. Let's dive into what makes this field so captivating!",
+    "duration_estimate": 30.0
+  },
+  {
+    "slide_number": 11,
+    "transcript": "Welcome to the exciting realm of Industrial IoT. Picture a CNC machine or a robot, all seamlessly connected through a secure network. This connectivity allows them to share data and enhance operations, ultimately making factories smarter and more efficient. Are you ready to delve deeper into this transformative technology? Let\u2019s get started!",
+    "duration_estimate": 32.4
+  },
+  {
+    "slide_number": 12,
+    "transcript": "Let's explore the Industrial Internet of Things, or IIoT. This concept involves connecting machines and equipment in various industries through secure networks, enabling them to share and analyze data. The goal is to enhance productivity and safety.\n\nConsider the example of Bosch's smart factory. In this setting, machines and sensors communicate in real time. This capability allows for early detection of issues, ensuring smooth and efficient operations. It's truly fascinating how this technology is revolutionizing industries!",
+    "duration_estimate": 45.6
+  },
+  {
+    "slide_number": 13,
+    "transcript": "Welcome to our exploration of connectivity's evolution\u2014from simple machine-to-machine interactions to the sophisticated smart industrial systems we have today. This journey is truly fascinating, and we'll discover how the Internet of Things (IoT) and the Industrial Internet of Things (IIoT) are shaping the future. Are you ready to dive in? Let's begin!",
+    "duration_estimate": 27.599999999999998
+  },
+  {
+    "slide_number": 14,
+    "transcript": "Let's explore how the Industrial IoT process functions. As shown on the slide, it involves a continuous cycle of data collection, transmission, and analysis. Initially, sensors capture real-time data, which is then securely transmitted for processing. This processed data reveals patterns and insights that inform decision-making, whether automatically or by operators, ensuring efficient operations. Isn't that intriguing?",
+    "duration_estimate": 37.199999999999996
+  },
+  {
+    "slide_number": 15,
+    "transcript": "Welcome to today's session on the key differences between Consumer IoT and Industrial IoT, also known as IIoT. In this slide, we will explore how these two types of IoT are designed for distinct purposes. This is an intriguing topic, and you'll discover some valuable insights along the way. Let's begin!",
+    "duration_estimate": 28.799999999999997
+  },
+  {
+    "slide_number": 16,
+    "transcript": "Let's explore how the Industrial Internet of Things, or IIoT, is revolutionizing Industry 4.0. IIoT seamlessly connects machines, sensors, and devices on the factory floor, enabling them to communicate and share data securely. This connectivity allows companies to identify potential issues early, ensuring smooth and efficient operations. Essentially, it's about transforming factories into smarter, more efficient environments. Exciting, isn't it?",
+    "duration_estimate": 39.6
+  },
+  {
+    "slide_number": 17,
+    "transcript": "Let's summarize what we've learned. The Internet of Things, or IoT, involves devices connecting and sharing data to simplify our lives. When applied to industries, this concept becomes the Industrial Internet of Things, or IIoT, which focuses on enhancing safety and efficiency. Fascinating, isn't it?",
+    "duration_estimate": 28.2
+  },
+  {
+    "slide_number": 18,
+    "transcript": "Thank you for joining us today. Your participation truly enhanced this session. If you have any questions or need more information, feel free to reach out using the contact details on the slide. Also, stay connected with us online for updates and additional insights. We appreciate your time and hope you found today's presentation valuable. Have a wonderful day!",
+    "duration_estimate": 48.6
+  }
+]
