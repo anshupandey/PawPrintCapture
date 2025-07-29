@@ -65,25 +65,44 @@ class PowerPointProcessor:
             print(f"Failed to update job status: {e}")
 
     def extract_content(self):
-        """Extract text and images from PowerPoint slides"""
+        """Extract text and images from PowerPoint slides with image analysis"""
         try:
             self.update_job_status('extracting', 10)
             
-            # Extract slides using python-pptx
+            # Extract slides using python-pptx and create slide images
             from pptx import Presentation
             import pytesseract
             from PIL import Image
             import io
+            import base64
             
             prs = Presentation(self.file_path)
+            
+            # Create slide images directory
+            slide_images_dir = self.work_dir / "slide_images_for_ai"
+            slide_images_dir.mkdir(exist_ok=True)
             
             for slide_idx, slide in enumerate(prs.slides):
                 slide_data = {
                     'slide_number': slide_idx + 1,
                     'text_content': [],
                     'image_text': [],
-                    'notes': ''
+                    'notes': '',
+                    'slide_image_base64': None
                 }
+                
+                # Create slide image for AI analysis
+                try:
+                    slide_image = self._create_slide_image(slide, slide_idx + 1)
+                    if slide_image:
+                        slide_image_path = slide_images_dir / f"slide_{slide_idx + 1}.png"
+                        slide_image.save(slide_image_path, 'PNG', dpi=(150, 150))
+                        
+                        # Convert to base64 for AI analysis
+                        with open(slide_image_path, 'rb') as img_file:
+                            slide_data['slide_image_base64'] = base64.b64encode(img_file.read()).decode()
+                except Exception as e:
+                    print(f"Failed to create slide image for slide {slide_idx + 1}: {e}")
                 
                 # Extract text from shapes
                 for shape in slide.shapes:
@@ -103,7 +122,7 @@ class PowerPointProcessor:
                                 image = Image.open(io.BytesIO(shape.image.blob))
                                 ocr_text = pytesseract.image_to_string(image).strip()
                                 if ocr_text:
-                                    slide_data['text_content'].append(f"[Image text: {ocr_text}]")
+                                    slide_data['image_text'].append(ocr_text)
                         except Exception as e:
                             print(f"OCR failed for slide {slide_idx + 1}: {e}")
                 
@@ -122,6 +141,103 @@ class PowerPointProcessor:
             error_msg = f"Content extraction failed: {str(e)}"
             self.update_job_status('error', 10, error_msg)
             raise Exception(error_msg)
+    
+    def _create_slide_image(self, slide, slide_number: int):
+        """Create a high-quality image of a slide for AI analysis"""
+        try:
+            from PIL import Image, ImageDraw, ImageFont
+            import io
+            
+            # Create a high-resolution image (1920x1080)
+            img = Image.new('RGB', (1920, 1080), 'white')
+            draw = ImageDraw.Draw(img)
+            
+            # Get slide dimensions (python-pptx uses EMUs - English Metric Units)
+            slide_width = 9144000  # Standard slide width in EMUs
+            slide_height = 6858000  # Standard slide height in EMUs
+            
+            # Calculate scale to fit slide into 1920x1080 with padding
+            scale_x = 1920 / slide_width
+            scale_y = 1080 / slide_height
+            scale = min(scale_x, scale_y) * 0.9  # Use 90% to add some padding
+            
+            # Calculate positioning to center the slide
+            scaled_width = int(slide_width * scale)
+            scaled_height = int(slide_height * scale)
+            offset_x = (1920 - scaled_width) // 2
+            offset_y = (1080 - scaled_height) // 2
+            
+            # Draw slide background
+            draw.rectangle([offset_x, offset_y, offset_x + scaled_width, offset_y + scaled_height], 
+                         fill='white', outline='lightgray', width=2)
+            
+            # Process shapes on the slide
+            for shape in slide.shapes:
+                self._render_shape_to_image(shape, draw, offset_x, offset_y, scale)
+            
+            return img
+            
+        except Exception as e:
+            print(f"Warning: Could not create slide image for slide {slide_number}: {e}")
+            return None
+    
+    def _render_shape_to_image(self, shape, draw, offset_x, offset_y, scale):
+        """Render a PowerPoint shape to PIL image"""
+        try:
+            from pptx.enum.shapes import MSO_SHAPE_TYPE
+            
+            # Get shape position and size (convert from EMUs to pixels)
+            left = int((shape.left * scale) + offset_x) if hasattr(shape, 'left') else 0
+            top = int((shape.top * scale) + offset_y) if hasattr(shape, 'top') else 0
+            width = int(shape.width * scale) if hasattr(shape, 'width') else 100
+            height = int(shape.height * scale) if hasattr(shape, 'height') else 100
+            
+            # Handle text shapes
+            if hasattr(shape, 'text_frame') and shape.text_frame:
+                text = shape.text_frame.text
+                if text.strip():
+                    try:
+                        # Try to use a better font
+                        font = ImageFont.load_default()
+                        # Wrap text if it's too long
+                        max_width = width - 10
+                        words = text.split()
+                        lines = []
+                        current_line = ""
+                        
+                        for word in words:
+                            test_line = current_line + (" " if current_line else "") + word
+                            bbox = draw.textbbox((0, 0), test_line, font=font)
+                            if bbox[2] - bbox[0] <= max_width or not current_line:
+                                current_line = test_line
+                            else:
+                                lines.append(current_line)
+                                current_line = word
+                        if current_line:
+                            lines.append(current_line)
+                        
+                        # Draw text lines
+                        for i, line in enumerate(lines):
+                            draw.text((left + 5, top + 5 + i * 20), line, fill='black', font=font)
+                    except Exception as font_error:
+                        draw.text((left + 5, top + 5), text[:100], fill='black')
+            
+            # Handle other shape types (simplified visualization)
+            elif hasattr(shape, 'shape_type'):
+                if width > 0 and height > 0:
+                    if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
+                        # Draw a placeholder for images
+                        draw.rectangle([left, top, left + width, top + height], 
+                                     outline='blue', fill='lightblue', width=2)
+                        draw.text((left + 5, top + 5), "[Image]", fill='darkblue')
+                    else:
+                        # Draw a placeholder rectangle for other shapes
+                        draw.rectangle([left, top, left + width, top + height], 
+                                     outline='gray', width=1)
+        
+        except Exception as e:
+            # Skip problematic shapes
+            pass
 
     def generate_transcripts(self):
         """Generate educational transcripts using AI"""
@@ -236,7 +352,7 @@ class PowerPointProcessor:
             raise Exception(error_msg)
 
     def save_outputs(self, narrated_pptx: str, video_file: str):
-        """Save all output files and update job with file paths"""
+        """Save all output files including audio zip and update job with file paths"""
         try:
             # Create outputs directory
             outputs_dir = Path("outputs") / self.job_id
@@ -247,6 +363,7 @@ class PowerPointProcessor:
             final_video = outputs_dir / "learning_module.mp4"
             final_pdf = outputs_dir / "original_presentation.pdf"
             final_transcripts = outputs_dir / "transcripts.json"
+            final_audio_zip = outputs_dir / "audio_files.zip"
             
             shutil.copy2(narrated_pptx, final_pptx)
             shutil.copy2(video_file, final_video)
@@ -256,12 +373,16 @@ class PowerPointProcessor:
             with open(final_transcripts, 'w') as f:
                 json.dump(self.transcripts, f, indent=2)
             
+            # Create audio files ZIP
+            self._create_audio_zip(final_audio_zip)
+            
             # Update job with output file paths
             output_files = {
                 'narrated_pptx': str(final_pptx),
                 'video_mp4': str(final_video), 
                 'pdf': str(final_pdf),
-                'transcripts_json': str(final_transcripts)
+                'transcripts_json': str(final_transcripts),
+                'audio_zip': str(final_audio_zip)
             }
             
             # Update job status with output files via HTTP API
@@ -285,6 +406,32 @@ class PowerPointProcessor:
             error_msg = f"Failed to save outputs: {str(e)}"
             self.update_job_status('error', 98, error_msg)
             raise Exception(error_msg)
+    
+    def _create_audio_zip(self, zip_path: Path):
+        """Create a ZIP file containing all audio files"""
+        import zipfile
+        
+        try:
+            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                for audio_data in self.audio_files:
+                    audio_file = audio_data['audio_file']
+                    slide_number = audio_data['slide_number']
+                    
+                    if os.path.exists(audio_file):
+                        # Add audio file with descriptive name
+                        audio_filename = f"slide_{slide_number:02d}_audio.mp3"
+                        zip_file.write(audio_file, audio_filename)
+                        
+                        # Also create a text file with the transcript
+                        transcript_filename = f"slide_{slide_number:02d}_transcript.txt"
+                        transcript_content = audio_data['transcript']
+                        zip_file.writestr(transcript_filename, transcript_content)
+        
+        except Exception as e:
+            print(f"Warning: Failed to create audio ZIP: {e}")
+            # Create an empty zip file to prevent errors
+            with zipfile.ZipFile(zip_path, 'w') as zip_file:
+                zip_file.writestr("readme.txt", "Audio files could not be packaged.")
 
     def cleanup(self):
         """Clean up temporary files"""

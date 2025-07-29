@@ -15,24 +15,33 @@ class VideoRenderer:
         self.temp_dir = None
     
     def create_video(self, pptx_path: str, audio_files: List[Dict[str, Any]], work_dir: Path) -> str:
-        """Create synchronized MP4 video from slides and audio"""
+        """Create synchronized MP4 video from actual PowerPoint slides and audio"""
         
         try:
-            # Convert slides to images
+            # Convert slides to high-quality images using the actual PowerPoint content
             slide_images = self._convert_slides_to_images(pptx_path, work_dir)
             
-            # Create video segments for each slide
+            if not slide_images:
+                raise Exception("No slide images were generated")
+            
+            # Create video segments for each slide with audio
             video_segments = []
             for audio_data in audio_files:
                 slide_num = audio_data['slide_number']
                 audio_file = audio_data['audio_file']
                 image_file = slide_images.get(slide_num)
                 
-                if image_file and os.path.exists(audio_file):
+                if image_file and os.path.exists(image_file) and os.path.exists(audio_file):
                     segment = self._create_video_segment(image_file, audio_file, work_dir, slide_num)
-                    video_segments.append(segment)
+                    if segment and os.path.exists(segment):
+                        video_segments.append(segment)
+                else:
+                    print(f"Warning: Missing files for slide {slide_num} - Image: {image_file}, Audio: {audio_file}")
             
-            # Concatenate all segments
+            if not video_segments:
+                raise Exception("No video segments were created successfully")
+            
+            # Concatenate all segments into final video
             final_video = self._concatenate_segments(video_segments, work_dir)
             
             return final_video

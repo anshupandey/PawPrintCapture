@@ -2,7 +2,23 @@
 
 ## Overview
 
-This is a full-stack web application that transforms PowerPoint presentations into high-quality self-learning modules. The application extracts content from uploaded PPTX files and uses AI to generate educational narration, which is then synthesized into audio and embedded back into the presentation. The system also creates video and PDF outputs for comprehensive learning experiences.
+This is a full-stack web application that transforms PowerPoint presentations into high-quality self-learning modules. The application extracts content from uploaded PPTX files and uses AI to generate educational narration, which is then synthesized into audio and embedded back into the presentation. The system creates video outputs with actual slide images, PDF references, and exports all audio files as a downloadable ZIP package for comprehensive learning experiences.
+
+## Recent Changes (July 29, 2025)
+
+### Major Processing Pipeline Improvements
+✓ **Enhanced Transcript Generation**: Now uses slide images for AI context analysis with GPT-4o vision
+✓ **Natural Speech Patterns**: Added authentic pause handling and conversational flow
+✓ **Improved Video Generation**: Videos now include actual PowerPoint slide images (not placeholders)
+✓ **Audio Export Feature**: Added ZIP download containing all individual slide audio files
+✓ **Content-Aware Narration**: Transcript length adapts to slide content (title slides shorter, content slides longer)
+
+### Technical Enhancements
+✓ **Slide Image Analysis**: Extract high-quality slide images for AI transcript generation
+✓ **Enhanced Audio Synthesis**: Added natural pauses, slower pace, and better speech patterns
+✓ **Video Rendering**: Fixed to use actual slide images instead of generic content
+✓ **Multi-Format Output**: PowerPoint, Video, PDF, Transcripts JSON, and Audio ZIP
+✓ **Database Schema**: Updated to support audio ZIP file tracking
 
 ## User Preferences
 

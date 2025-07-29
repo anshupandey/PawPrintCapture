@@ -11,7 +11,7 @@ import { uploadRequestSchema, type UploadRequest, type ProcessingJob } from "@sh
 import FileUpload from "@/components/ui/file-upload";
 import ApiKeyForm from "@/components/ui/api-key-form";
 import ProgressTracker from "@/components/ui/progress-tracker";
-import { Download, Play, FileText, Video, FileImage } from "lucide-react";
+import { Download, Play, FileText, Video, FileImage, Music } from "lucide-react";
 
 export default function Upload() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -221,6 +221,18 @@ export default function Upload() {
                     <span className="text-sm text-gray-600">Generated narration text</span>
                   </Button>
                 )}
+
+                {completedJob.output_files.audio_zip && (
+                  <Button
+                    variant="outline"
+                    className="h-auto p-4 flex flex-col items-center gap-2 border-green-300 hover:bg-green-100"
+                    onClick={() => downloadFile(completedJob.output_files!.audio_zip!, "audio_files.zip")}
+                  >
+                    <Music className="h-8 w-8 text-green-600" />
+                    <span className="font-medium">Audio Files</span>
+                    <span className="text-sm text-gray-600">All slide audio as ZIP</span>
+                  </Button>
+                )}
               </div>
               <div className="flex justify-center pt-4">
                 <Button 
@@ -340,6 +352,18 @@ export default function Upload() {
                         <FileText className="h-8 w-8" />
                         <span className="font-medium">Transcripts</span>
                         <span className="text-sm text-gray-500">Generated narration text</span>
+                      </Button>
+                    )}
+
+                    {job.output_files.audio_zip && (
+                      <Button
+                        variant="outline"
+                        className="h-auto p-4 flex flex-col items-center gap-2"
+                        onClick={() => downloadFile(job.output_files!.audio_zip!, "audio_files.zip")}
+                      >
+                        <Music className="h-8 w-8" />
+                        <span className="font-medium">Audio Files</span>
+                        <span className="text-sm text-gray-500">All slide audio as ZIP</span>
                       </Button>
                     )}
                   </div>

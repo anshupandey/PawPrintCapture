@@ -53,13 +53,21 @@ class AudioSynthesizer:
             raise ValueError(f"Unsupported TTS provider: {self.provider}")
     
     def _synthesize_openai(self, text: str, output_path: Path) -> str:
-        """Synthesize using OpenAI TTS"""
+        """Synthesize using OpenAI TTS with natural pauses and pacing"""
         try:
+            # Add SSML-like pauses for more natural speech
+            enhanced_text = self._add_natural_pauses(text)
+            
+            # Use voice configuration from settings or default to alloy
+            voice_settings = self.config.get('voice_settings', {})
+            voice = voice_settings.get('voice', 'alloy')
+            
             response = self.openai_client.audio.speech.create(
                 model="tts-1-hd",  # High quality model
-                voice="alloy",     # Professional, clear voice
-                input=text,
-                response_format="mp3"
+                voice=voice,       # Professional, clear voice
+                input=enhanced_text,
+                response_format="mp3",
+                speed=0.9          # Slightly slower for educational content
             )
             
             with open(output_path, 'wb') as f:
@@ -69,6 +77,31 @@ class AudioSynthesizer:
             
         except Exception as e:
             raise Exception(f"OpenAI TTS synthesis failed: {str(e)}")
+    
+    def _add_natural_pauses(self, text: str) -> str:
+        """Add natural pauses to text for more natural speech"""
+        import re
+        
+        # Add longer pauses after sentences
+        text = re.sub(r'\.(\s+)', r'. \1', text)
+        
+        # Add brief pauses after commas
+        text = re.sub(r',(\s+)', r', \1', text)
+        
+        # Add pauses after transitional phrases
+        transitional_phrases = [
+            'So,', 'Now,', 'Well,', 'Actually,', 'In fact,', 
+            'Here\'s the thing,', 'What\'s interesting is,', 'You see,',
+            'First,', 'Next,', 'Finally,', 'However,', 'Therefore,'
+        ]
+        
+        for phrase in transitional_phrases:
+            text = text.replace(phrase, phrase + ' ')
+        
+        # Add slight pauses before important conjunctions
+        text = re.sub(r'\s+(but|and|or|however|therefore)\s+', r' \1 ', text)
+        
+        return text
     
     def _synthesize_google(self, text: str, output_path: Path) -> str:
         """Synthesize using Google Cloud TTS"""

@@ -165,6 +165,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           contentType = 'application/json';
           filename = 'transcripts.json';
           break;
+        case 'audio_zip':
+          filePath = job.output_files.audio_zip;
+          contentType = 'application/zip';
+          filename = 'audio_files.zip';
+          break;
         default:
           return res.status(400).json({ error: "Invalid file type" });
       }

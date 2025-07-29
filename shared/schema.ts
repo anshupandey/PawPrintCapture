@@ -18,6 +18,7 @@ export const jobs = pgTable("jobs", {
     video_mp4?: string;
     pdf?: string;
     transcripts_json?: string;
+    audio_zip?: string;
   }>(),
   config: jsonb("config").$type<{
     tts_provider: string;
@@ -39,6 +40,7 @@ export const processingJobSchema = z.object({
     video_mp4: z.string().optional(),
     pdf: z.string().optional(),
     transcripts_json: z.string().optional(),
+    audio_zip: z.string().optional(),
   }).optional(),
 });
 

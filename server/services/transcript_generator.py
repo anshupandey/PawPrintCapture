@@ -16,7 +16,7 @@ class TranscriptGenerator:
         self.model = "gpt-4o"
     
     def generate_slide_transcript(self, slide_data: Dict[str, Any]) -> str:
-        """Generate educational transcript for a single slide"""
+        """Generate educational transcript for a single slide with natural conversation style and image analysis"""
         
         # Combine all text content
         all_text = []
@@ -29,29 +29,153 @@ class TranscriptGenerator:
         
         combined_text = "\n".join(all_text)
         
+        # Analyze slide content to determine appropriate length
+        has_images = len(slide_data.get('image_text', [])) > 0
+        text_length = len(combined_text.strip())
+        is_title_slide = slide_data['slide_number'] == 1 or any(
+            keyword in combined_text.lower() 
+            for keyword in ['title', 'overview', 'agenda', 'outline', 'introduction']
+        )
+        
+        # Determine target length based on content
+        if is_title_slide:
+            target_words = "30-50"
+            target_seconds = "15-25"
+        elif text_length < 100:  # Minimal text
+            target_words = "40-70"
+            target_seconds = "20-35"
+        elif not has_images:  # Text-heavy slide
+            target_words = "80-120"
+            target_seconds = "40-60"
+        else:  # Balanced content
+            target_words = "60-100"
+            target_seconds = "30-50"
+        
+        # Use slide image for better context if available
+        if slide_data.get('slide_image_base64'):
+            return self._generate_transcript_with_image(slide_data, combined_text, target_words, target_seconds, is_title_slide, has_images)
+        else:
+            return self._generate_transcript_text_only(slide_data, combined_text, target_words, target_seconds, is_title_slide, has_images)
+    
+    def _generate_transcript_with_image(self, slide_data: Dict[str, Any], combined_text: str, target_words: str, target_seconds: str, is_title_slide: bool, has_images: bool) -> str:
+        """Generate transcript using both text content and slide image for better context"""
+        
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "system", 
+                        "content": "You are an expert instructional designer creating natural, conversational narration for educational presentations. You can see both the slide content and the visual layout to create the perfect narration."
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": f"""
+Create natural, conversational narration for slide {slide_data['slide_number']} that sounds like a friendly teacher speaking.
+
+SLIDE TEXT CONTENT:
+{combined_text}
+
+CONTENT ANALYSIS:
+- Slide type: {'Title/Introduction slide' if is_title_slide else 'Content slide with images' if has_images else 'Text-focused slide'}
+- Target length: {target_words} words ({target_seconds} seconds when spoken)
+
+INSTRUCTIONS:
+1. Write in natural, conversational tone like you're speaking to a friend
+2. Use contractions (we'll, let's, you're) to sound more natural
+3. Include natural speech patterns with brief pauses indicated by commas and periods
+4. For title slides: Keep it brief, welcoming, and set expectations
+5. For text-light slides: Don't over-explain, focus on key points
+6. For image-heavy slides: Give time for visual absorption with thoughtful pacing
+7. Use transitional phrases that feel natural: "Now,", "So,", "Here's the thing,", "What's interesting is..."
+8. Include legitimate pauses with punctuation for natural breathing
+9. End sentences with periods for natural stops, use commas for brief pauses
+10. Sound enthusiastic but not overly excited - like an engaging teacher
+11. Consider the visual layout you can see - reference visual elements naturally
+
+SPEECH PATTERNS TO INCLUDE:
+- Use "So," or "Now," at the beginning of sentences
+- Add "you know" or "you see" occasionally for conversational flow
+- Include brief thinking pauses: "Well,", "Actually,", "In fact,"
+- Reference what learners can see: "As you can see here,", "Looking at this slide,", "Notice that..."
+
+Respond with only the transcript text that will sound natural when spoken aloud.
+                                """
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/png;base64,{slide_data['slide_image_base64']}"
+                                }
+                            }
+                        ]
+                    }
+                ],
+                max_tokens=300,
+                temperature=0.7
+            )
+            
+            content = response.choices[0].message.content
+            return content.strip() if content else ""
+            
+        except Exception as e:
+            print(f"Warning: Failed to generate transcript with image for slide {slide_data['slide_number']}: {str(e)}")
+            # Fallback to text-only generation
+            return self._generate_transcript_text_only(slide_data, combined_text, target_words, target_seconds, is_title_slide, has_images)
+    
+    def _generate_transcript_text_only(self, slide_data: Dict[str, Any], combined_text: str, target_words: str, target_seconds: str, is_title_slide: bool, has_images: bool) -> str:
+        """Generate transcript using only text content (fallback method)"""
+        
         prompt = f"""
-You are an expert instructional designer creating narration for an educational presentation. 
-Your task is to write a clear, engaging, conversational transcript for slide {slide_data['slide_number']}.
+You are an expert instructional designer creating natural, conversational narration for an educational presentation. 
+Your task is to write engaging transcript for slide {slide_data['slide_number']} that sounds like a friendly teacher speaking.
 
 SLIDE CONTENT:
 {combined_text}
 
+CONTENT ANALYSIS:
+- Slide type: {'Title/Introduction slide' if is_title_slide else 'Content slide with images' if has_images else 'Text-focused slide'}
+- Target length: {target_words} words ({target_seconds} seconds when spoken)
+
 INSTRUCTIONS:
-1. Write in a conversational tone using "we" or "you" to engage the learner
-2. Start with a brief overview of what this slide covers
-3. Break complex information into digestible pieces
-4. Include examples or scenarios when appropriate
-5. Use clear signposting language (e.g., "First, let's explore...", "Next, we'll examine...")
-6. End with a brief summary or transition to maintain flow
-7. Match the pace to allow learners time to absorb visual information
-8. Make it sound natural when spoken aloud
-9. Keep the narration informative but not overly dense
-10. Maintain an encouraging, professional tone
+1. Write in natural, conversational tone like you're speaking to a friend
+2. Use contractions (we'll, let's, you're) to sound more natural
+3. Include natural speech patterns with brief pauses indicated by commas and periods
+4. For title slides: Keep it brief, welcoming, and set expectations
+5. For text-light slides: Don't over-explain, focus on key points
+6. For image-heavy slides: Give time for visual absorption with thoughtful pacing
+7. Use transitional phrases that feel natural: "Now,", "So,", "Here's the thing,", "What's interesting is..."
+8. Include legitimate pauses with punctuation for natural breathing
+9. End sentences with periods for natural stops, use commas for brief pauses
+10. Sound enthusiastic but not overly excited - like an engaging teacher
 
-The transcript should be approximately 30-60 seconds when spoken (roughly 75-150 words).
+SPEECH PATTERNS TO INCLUDE:
+- Use "So," or "Now," at the beginning of sentences
+- Add "you know" or "you see" occasionally for conversational flow
+- Include brief thinking pauses: "Well,", "Actually,", "In fact,"
 
-Respond with only the transcript text, no additional formatting or metadata.
+Respond with only the transcript text that will sound natural when spoken aloud.
 """
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "You are an expert instructional designer creating engaging educational narration."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=300,
+                temperature=0.7
+            )
+            
+            content = response.choices[0].message.content
+            return content.strip() if content else ""
+            
+        except Exception as e:
+            raise Exception(f"Failed to generate transcript for slide {slide_data['slide_number']}: {str(e)}")
 
         try:
             response = self.client.chat.completions.create(
